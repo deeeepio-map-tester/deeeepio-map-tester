@@ -9,8 +9,5 @@ export function calculateAssetSize(animalId: number) {
 	}
 	const sx = baseScale.x * animal.sizeScale.x * animal.sizeMultiplier;
 	const sy = baseScale.y * animal.sizeScale.y * animal.sizeMultiplier;
-	return {
-		planck: { width: sx / 20, height: sy / 20 },
-		pixi: { scale: sy / 3.8 / 680 / (animal.sizeScale.y > animal.sizeScale.x ? animal.sizeScale.y : 1) },
-	};
+	return { planck: { width: sx / 20, height: sy / 20 }, pixi: { scale: sy / 3.8 / 680 / animal.sizeScale.y } };
 }
