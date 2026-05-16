@@ -108,6 +108,10 @@ export async function initGame() {
 			updateAnimal(animal, true, index === 0);
 		});
 
+		s.npcs.forEach((npc) => {
+			updateAnimal(npc, false);
+		});
+
 		s.foods = s.foods
 			.map((food) => {
 				return updateFood(food);

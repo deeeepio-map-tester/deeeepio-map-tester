@@ -41,6 +41,7 @@ export interface GameState {
 	mouseData: { clientX: number; clientY: number };
 	layers: LayerRefs | null;
 	myAnimals: Animal[];
+	npcs: Animal[];
 	foods: Food[];
 	waterObjects: { x: number; y: number }[][];
 	airPocketObjects: { x: number; y: number }[][];
@@ -60,6 +61,7 @@ export const gameState: GameState = {
 	mouseData: { clientX: 0, clientY: 0 },
 	layers: null,
 	myAnimals: [],
+	npcs: [],
 	foods: [],
 	waterObjects: [],
 	airPocketObjects: [],

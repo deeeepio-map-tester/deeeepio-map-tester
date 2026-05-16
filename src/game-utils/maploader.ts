@@ -55,9 +55,7 @@ interface MapDataParsed {
 export function loadMap(json: Record<string, unknown>) {
 	if (!json.data) return false;
 	const data = JSON.parse(json.data as string) as MapDataParsed;
-	data.screenObjects = data.screenObjects.filter(
-		(l) => !["animals", "npc-spawns", "triggers", "currents"].includes(l.layerId),
-	);
+	data.screenObjects = data.screenObjects.filter((l) => !["animals", "triggers", "currents"].includes(l.layerId));
 	const tempObj: Record<string, unknown[]> = {};
 	data.screenObjects.forEach((l) => {
 		if (!tempObj[l.layerId]) tempObj[l.layerId] = [];

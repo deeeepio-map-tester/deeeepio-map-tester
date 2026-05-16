@@ -38,12 +38,14 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 		);
 	thisAnimal.prevInWater = thisAnimal.inWater;
 
-	thisAnimal.doApplyForce =
-		Math.sqrt(
-			((thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom - (s.mouseData.clientX - window.innerWidth / 2)) ** 2 +
-				((thisAnimal.pixiAnimal.y - app.stage.pivot.y) * s.zoom - (s.mouseData.clientY - window.innerHeight / 2)) ** 2,
-		) >
-		6 * s.zoom;
+	thisAnimal.doApplyForce = isMine
+		? Math.sqrt(
+				((thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom - (s.mouseData.clientX - window.innerWidth / 2)) ** 2 +
+					((thisAnimal.pixiAnimal.y - app.stage.pivot.y) * s.zoom - (s.mouseData.clientY - window.innerHeight / 2)) **
+						2,
+			) >
+			6 * s.zoom
+		: false;
 
 	// walking logic
 	// eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -207,6 +209,16 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 		thisAnimal.animal.getPosition().y * planckDownscaleFactor - 7 - 4 * (thisAnimal.animalData.sizeMultiplier - 1),
 	);
 	thisAnimal.pixiAnimalUi.scale.set(0.1);
+
+	if (!isMine) {
+		const camX = app.stage.pivot.x;
+		const camY = app.stage.pivot.y;
+		const viewDist = Math.max(window.innerWidth, window.innerHeight) * s.zoom * 12;
+		const visible = (thisAnimal.pixiAnimal.x - camX) ** 2 + (thisAnimal.pixiAnimal.y - camY) ** 2 < viewDist * viewDist;
+		thisAnimal.pixiAnimal.renderable = visible;
+		thisAnimal.pixiAnimalUi.renderable = visible;
+		return;
+	}
 
 	if (isMine) {
 		const centerX = (thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom;

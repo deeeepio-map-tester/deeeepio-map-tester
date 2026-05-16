@@ -1,4 +1,6 @@
 import { getHidespaceById, getPropById } from "../game-utils/maploader";
+import { Animal } from "../objects/animal";
+import { planckDownscaleFactor } from "../objects/constants";
 import { Food } from "../objects/food";
 import { renderGradientShape, renderTerrainShape, renderWaterBorder } from "../pixi-utils";
 import type { DeeeepioMapScreenObject } from "../types";
@@ -174,6 +176,28 @@ export function renderMap(map: MapData, layers: LayerRefs) {
 					onlyOnWater: f.settings.onlyOnWater,
 					spawner: { water: { x: f.position.x, y: f.position.y, width: f.size.width, height: f.size.height } },
 				}),
+			);
+		}
+	});
+
+	// Spawn NPCs
+	map.screenObjects["npc-spawns"]?.forEach((npc: DeeeepioMapScreenObject) => {
+		const fishLevels = npc.settings.fishLevels;
+		if (!fishLevels || fishLevels.length === 0) return;
+		for (let i = 0; i < (npc.settings.animalCount || 1); i++) {
+			const fishLevel = fishLevels[Math.floor(Math.random() * fishLevels.length)];
+			const spawnX = npc.position.x + Math.random() * npc.size.width;
+			const spawnY = npc.position.y + Math.random() * npc.size.height;
+			s.npcs.push(
+				new Animal(
+					s.world!,
+					fishLevel,
+					layers.animalsLayer,
+					layers.animalsUiLayer,
+					spawnX / planckDownscaleFactor,
+					spawnY / planckDownscaleFactor,
+					"",
+				),
 			);
 		}
 	});
