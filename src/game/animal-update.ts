@@ -124,7 +124,7 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 	}
 
 	// movement and damping
-	if (!thisAnimal.inWater) {
+	if (!thisAnimal.inWater && !thisAnimal.animalData.canFly) {
 		if (!thisAnimal.walking) {
 			thisAnimal.doApplyForce = false;
 			thisAnimal.animal.setLinearDamping(0.1);
@@ -134,7 +134,11 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 			thisAnimal.animal.setGravityScale(0);
 		}
 	} else {
-		thisAnimal.animal.setGravityScale(0);
+		if (thisAnimal.inWater && thisAnimal.animalData.canFly) {
+			thisAnimal.animal.setGravityScale(-1);
+		} else {
+			thisAnimal.animal.setGravityScale(0);
+		}
 		thisAnimal.animal.setLinearDamping(linearDampingFactor);
 	}
 
@@ -153,6 +157,7 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 		}, 100);
 		thisAnimal.animal.setLinearDamping(linearDampingFactor * 2);
 	}
+	thisAnimal.oldDoApplyForce = thisAnimal.doApplyForce;
 
 	// apply force to attach to terrain
 	if (thisAnimal.walking && surfaceNormal) {
