@@ -2,6 +2,7 @@ import { chargedBoost as defaultChargedBoost } from "../animal-abilities/default
 import { chargedBoost as killerwhaleChargedBoost } from "../animal-abilities/killerwhale";
 import { calculateAssetSize } from "../game-utils/animal-sizing";
 import animals from "../game-utils/consts/animals.json";
+import { BodyInterpolator } from "../game/interpolator";
 import { makeHumanReadableNumber } from "../math-utils";
 import type { AnimalAbilities } from "../types";
 import { linearDampingFactor, planckDownscaleFactor, speedRatio } from "./constants";
@@ -81,6 +82,7 @@ export class Animal {
 	direction: number;
 	walking: boolean;
 	speedFac: number;
+	interpolator: BodyInterpolator;
 
 	xp: number;
 	xpText: Text | undefined;
@@ -208,6 +210,15 @@ export class Animal {
 		this.walking = false;
 
 		this.speedFac = linearDampingFactor * speedRatio;
+
+		this.interpolator = new BodyInterpolator({
+			x: this.animal.getPosition().x,
+			y: this.animal.getPosition().y,
+			angle: this.animal.getAngle(),
+			vx: this.animal.getLinearVelocity().x,
+			vy: this.animal.getLinearVelocity().y,
+			angularVelocity: this.animal.getAngularVelocity(),
+		});
 
 		this.chargedBoostStartTime = Number.POSITIVE_INFINITY;
 		this.chargedBoostPercent = 0;

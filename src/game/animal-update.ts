@@ -10,7 +10,7 @@ import * as PIXI from "pixi.js";
 import * as planck from "planck";
 import pointInPolygon from "robust-point-in-polygon";
 
-export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
+export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 	const s = gameState;
 	const layers = s.layers!;
 	const app = s.app!;
@@ -192,12 +192,19 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 		thisAnimal.animal.setAngle(thisAnimal.direction);
 		thisAnimal.animal.applyForceToCenter(new planck.Vec2(Math.cos(rotation) * spdf, Math.sin(rotation) * spdf));
 	}
+}
 
-	// sync data between planck and pixi
-	thisAnimal.pixiAnimal.position.set(
-		thisAnimal.animal.getPosition().x * planckDownscaleFactor,
-		thisAnimal.animal.getPosition().y * planckDownscaleFactor,
-	);
+export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: boolean, t: number) {
+	const s = gameState;
+	const layers = s.layers!;
+	const app = s.app!;
+	const thisAnimal = animal.getState;
+
+	const interpolated = thisAnimal.interpolator.interpolate(t);
+
+	// sync data between planck and pixi (interpolated)
+	thisAnimal.pixiAnimal.position.set(interpolated.x * planckDownscaleFactor, interpolated.y * planckDownscaleFactor);
+	thisAnimal.pixiAnimal.rotation = interpolated.angle;
 	thisAnimal.pixiAnimal.scale.set(thisAnimal.animalSize.pixi.scale * thisAnimal.scale);
 
 	// display animal as walking in pixi
@@ -210,8 +217,8 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 	thisAnimal.grabHook.rotation = -thisAnimal.pixiAnimal.rotation;
 
 	thisAnimal.pixiAnimalUi.position.set(
-		thisAnimal.animal.getPosition().x * planckDownscaleFactor,
-		thisAnimal.animal.getPosition().y * planckDownscaleFactor - 7 - 4 * (thisAnimal.animalData.sizeMultiplier - 1),
+		interpolated.x * planckDownscaleFactor,
+		interpolated.y * planckDownscaleFactor - 7 - 4 * (thisAnimal.animalData.sizeMultiplier - 1),
 	);
 	thisAnimal.pixiAnimalUi.scale.set(0.1);
 
@@ -236,8 +243,6 @@ export function updateAnimal(animal: Animal, isMine: boolean, isMain = false) {
 				centerY,
 			) +
 			Math.PI / 2;
-
-		thisAnimal.pixiAnimal.rotation = thisAnimal.animal.getAngle();
 
 		if (isMain) {
 			const viewportPos = clampCamera(

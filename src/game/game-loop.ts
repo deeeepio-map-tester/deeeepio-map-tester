@@ -2,7 +2,7 @@ import { loadAssets } from "../assetsloader";
 import { loadMap, getShadowSize } from "../game-utils/maploader";
 import { Animal } from "../objects/animal";
 import type { DeeeepioMapScreenObject } from "../types";
-import { updateAnimal } from "./animal-update";
+import { updateAnimalPhysics, updateAnimalRender } from "./animal-update";
 import { updateFood } from "./food-update";
 import { gameState, type MapData } from "./game-state";
 import { initMouseTracking, setupBoost, initZoomControls } from "./input";
@@ -12,6 +12,8 @@ import { setShadowSize as setShadow } from "./shadow";
 import { initWorld } from "./world-init";
 import * as TWEEN from "@tweenjs/tween.js";
 import * as PIXI from "pixi.js";
+
+const TICK_MS = 33;
 
 export async function initGame() {
 	const s = gameState;
@@ -43,8 +45,24 @@ export async function initGame() {
 	const layers = createLayers(app);
 
 	// Setup game ticker
+	// Renderer runs at max device frame rate, physics is decoupled at ~30fps
+	let physicsAccum = 0;
+	let tickAge = 0;
+
 	app.ticker.add((dt) => {
-		update(dt);
+		const deltaMs = dt.deltaMS;
+
+		tickAge += deltaMs;
+
+		physicsAccum += deltaMs;
+		while (physicsAccum >= TICK_MS) {
+			physicsStep(TICK_MS);
+			physicsAccum -= TICK_MS;
+			tickAge = 0;
+		}
+
+		const t = Math.min(tickAge / TICK_MS, 1);
+		renderStep(t);
 	});
 
 	// one-time rendering
@@ -89,12 +107,45 @@ export async function initGame() {
 	// Initialize input
 	initMouseTracking();
 	initZoomControls();
-	s.myAnimals.forEach((a: Animal) => setupBoost(a));
+	for (const a of s.myAnimals) {
+		setupBoost(a);
+	}
 
-	function update({ deltaTime: dt }: PIXI.Ticker) {
+	function physicsStep(dt: number) {
+		s.myAnimals.forEach((animal, index) => {
+			updateAnimalPhysics(animal, true);
+		});
+
+		s.npcs.forEach((npc) => {
+			updateAnimalPhysics(npc, false);
+		});
+
+		s.foods = s.foods
+			.map((food) => {
+				return updateFood(food);
+			})
+			.filter((food): food is NonNullable<typeof food> => food !== null);
+
+		s.world!.step(dt / 1000, 8, 5);
+		s.world!.clearForces();
+
+		for (const animal of [...s.myAnimals, ...s.npcs]) {
+			animal.interpolator.push({
+				x: animal.animal.getPosition().x,
+				y: animal.animal.getPosition().y,
+				angle: animal.animal.getAngle(),
+				vx: animal.animal.getLinearVelocity().x,
+				vy: animal.animal.getLinearVelocity().y,
+				angularVelocity: animal.animal.getAngularVelocity(),
+			});
+		}
+	}
+
+	function renderStep(t: number) {
 		app.stage.position.set(window.innerWidth / 2, window.innerHeight / 2);
 		app.stage.scale.set(s.zoom);
 
+		const layers = s.layers!;
 		layers.hideSpacesLowLayer.children.forEach((object: PIXI.ContainerChild & { animation?: string }) => {
 			if (object.animation !== "whirlpool") return;
 			object.angle = whirlPool.rotation;
@@ -105,20 +156,11 @@ export async function initGame() {
 		});
 
 		s.myAnimals.forEach((animal, index) => {
-			updateAnimal(animal, true, index === 0);
+			updateAnimalRender(animal, true, index === 0, t);
 		});
 
 		s.npcs.forEach((npc) => {
-			updateAnimal(npc, false);
+			updateAnimalRender(npc, false, false, t);
 		});
-
-		s.foods = s.foods
-			.map((food) => {
-				return updateFood(food);
-			})
-			.filter((food): food is NonNullable<typeof food> => food !== null);
-
-		s.world!.step((app.ticker.elapsedMS / 1000) * dt, 8, 5);
-		s.world!.clearForces();
 	}
 }
