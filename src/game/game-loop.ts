@@ -77,8 +77,7 @@ export async function initGame() {
 	})();
 
 	// Render player.pixi
-	s.myAnimals.push(new Animal(s.world, 7, layers.animalsLayer, layers.animalsUiLayer, 1, 1, window.playerName));
-	// s.myAnimals.push(new Animal(s.world, 11, layers.animalsLayer, layers.animalsUiLayer, 1, 1, window.playerName));
+	s.myAnimals.push(new Animal(s.world, 11, layers.animalsLayer, layers.animalsUiLayer, 1, 1, window.playerName));
 	// for (var i = 0; i < 100; i++) {
 	// setTimeout(() => {
 	// var animal = new Animal(s.world, 11, layers.animalsLayer, layers.animalsUiLayer, 1, 1, window.playerName);
