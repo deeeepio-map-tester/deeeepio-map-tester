@@ -96,6 +96,8 @@ export class Animal {
 
 	grabHookVisible: boolean;
 	grabHook: Sprite;
+	boostForce: { x: number; y: number; remaining: number; duration: number };
+	sustainedForce: { x: number; y: number; remaining: number; duration: number };
 
 	constructor(
 		// eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -222,6 +224,8 @@ export class Animal {
 
 		this.chargedBoostStartTime = Number.POSITIVE_INFINITY;
 		this.chargedBoostPercent = 0;
+		this.boostForce = { x: 0, y: 0, remaining: 0, duration: 1 };
+		this.sustainedForce = { x: 0, y: 0, remaining: 0, duration: 1 };
 	}
 
 	get getState() {

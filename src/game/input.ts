@@ -29,16 +29,32 @@ export const setupBoost = (animal: Animal) => {
 				centerY,
 			);
 
-			animalInstance.animal.applyLinearImpulse(
-				new planck.Vec2(
-					Math.cos(angle) * animalInstance.speedFac * (animalInstance.inWater ? boostPower.water : boostPower.air),
-					Math.sin(angle) * animalInstance.speedFac * (animalInstance.inWater ? boostPower.water : boostPower.air),
-				),
-				animalInstance.animal.getPosition(),
-			);
-			const sf = { v: 0 };
+			const power = animalInstance.inWater ? boostPower.water : boostPower.air;
+			const accelStrength = animalInstance.speedFac * power * 15.0;
+			const accelDuration = 100;
+			const forceStrength = animalInstance.speedFac * power * 0.8;
+			const boostDuration = 300;
+			const recoverDuration = boostDuration * 2;
+
+			animalInstance.boostForce = {
+				x: Math.cos(angle) * accelStrength,
+				y: Math.sin(angle) * accelStrength,
+				remaining: accelDuration,
+				duration: accelDuration,
+			};
+
+			animalInstance.sustainedForce = {
+				x: Math.cos(angle) * forceStrength,
+				y: Math.sin(angle) * forceStrength,
+				remaining: boostDuration,
+				duration: boostDuration,
+			};
+
+			const savedSpeedFac = animalInstance.speedFac;
+			animalInstance.speedFac = savedSpeedFac * 0.15;
+			const sf = { v: savedSpeedFac * 0.15 };
 			const boostTween = new TWEEN.Tween(sf)
-				.to({ v: animalInstance.speedFac }, 300)
+				.to({ v: savedSpeedFac }, recoverDuration)
 				.easing(TWEEN.Easing.Quartic.In)
 				.onUpdate(() => {
 					animalInstance.speedFac = sf.v;
@@ -65,13 +81,36 @@ export const setupBoost = (animal: Animal) => {
 				centerY,
 			);
 
-			animalInstance.animal.applyLinearImpulse(
-				new planck.Vec2(
-					Math.cos(angle) * animalInstance.speedFac * boostPower.land,
-					Math.sin(angle) * animalInstance.speedFac * boostPower.land,
-				),
-				animalInstance.animal.getPosition(),
-			);
+			const impulseStrength = animalInstance.speedFac * boostPower.land * 15.0;
+			const accelDuration = 60;
+			const forceStrength = animalInstance.speedFac * boostPower.land * 0.8;
+			const boostDuration = 150;
+			const recoverDuration = boostDuration * 2;
+
+			animalInstance.boostForce = {
+				x: Math.cos(angle) * impulseStrength,
+				y: Math.sin(angle) * impulseStrength,
+				remaining: accelDuration,
+				duration: accelDuration,
+			};
+
+			animalInstance.sustainedForce = {
+				x: Math.cos(angle) * forceStrength,
+				y: Math.sin(angle) * forceStrength,
+				remaining: boostDuration,
+				duration: boostDuration,
+			};
+
+			const savedSpeedFac = animalInstance.speedFac;
+			animalInstance.speedFac = savedSpeedFac * 0.15;
+			const sf = { v: savedSpeedFac * 0.15 };
+			const boostTween = new TWEEN.Tween(sf)
+				.to({ v: savedSpeedFac }, recoverDuration)
+				.easing(TWEEN.Easing.Quartic.In)
+				.onUpdate(() => {
+					animalInstance.speedFac = sf.v;
+				})
+				.start();
 		},
 		150,
 		{ trailing: false },

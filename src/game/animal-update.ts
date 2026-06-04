@@ -1,7 +1,7 @@
 import { getBiomes } from "../game-utils/maploader";
 import { findNearestPointOnLine, point2rad } from "../math-utils";
 import type { Animal } from "../objects/animal";
-import { linearDampingFactor, planckDownscaleFactor } from "../objects/constants";
+import { linearDampingFactor, planckDownscaleFactor, TICK_MS } from "../objects/constants";
 import { clampCamera } from "../pixi-utils";
 import type { DeeeepioMapScreenObject } from "../types";
 import { gameState } from "./game-state";
@@ -192,6 +192,22 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 		thisAnimal.animal.setAngle(thisAnimal.direction);
 		thisAnimal.animal.applyForceToCenter(new planck.Vec2(Math.cos(rotation) * spdf, Math.sin(rotation) * spdf));
 	}
+
+	if (thisAnimal.boostForce.remaining > 0) {
+		const fraction = thisAnimal.boostForce.remaining / thisAnimal.boostForce.duration;
+		thisAnimal.animal.applyForceToCenter(
+			new planck.Vec2(thisAnimal.boostForce.x * fraction, thisAnimal.boostForce.y * fraction),
+		);
+		thisAnimal.boostForce.remaining -= TICK_MS;
+	}
+
+	if (thisAnimal.sustainedForce.remaining > 0) {
+		const fraction = thisAnimal.sustainedForce.remaining / thisAnimal.sustainedForce.duration;
+		thisAnimal.animal.applyForceToCenter(
+			new planck.Vec2(thisAnimal.sustainedForce.x * fraction, thisAnimal.sustainedForce.y * fraction),
+		);
+		thisAnimal.sustainedForce.remaining *= 0.7;
+	}
 }
 
 export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: boolean, t: number) {
@@ -204,7 +220,6 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 
 	// sync data between planck and pixi (interpolated)
 	thisAnimal.pixiAnimal.position.set(interpolated.x * planckDownscaleFactor, interpolated.y * planckDownscaleFactor);
-	thisAnimal.pixiAnimal.rotation = interpolated.angle;
 	thisAnimal.pixiAnimal.scale.set(thisAnimal.animalSize.pixi.scale * thisAnimal.scale);
 
 	// display animal as walking in pixi
@@ -223,6 +238,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 	thisAnimal.pixiAnimalUi.scale.set(0.1);
 
 	if (!isMine) {
+		thisAnimal.pixiAnimal.rotation = interpolated.angle;
 		const camX = app.stage.pivot.x;
 		const camY = app.stage.pivot.y;
 		const viewDist = Math.max(window.innerWidth, window.innerHeight) * s.zoom * 12;
@@ -243,6 +259,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 				centerY,
 			) +
 			Math.PI / 2;
+		thisAnimal.pixiAnimal.rotation = thisAnimal.direction;
 
 		if (isMain) {
 			const viewportPos = clampCamera(

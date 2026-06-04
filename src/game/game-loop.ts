@@ -1,6 +1,7 @@
 import { loadAssets } from "../assetsloader";
 import { loadMap, getShadowSize } from "../game-utils/maploader";
 import { Animal } from "../objects/animal";
+import { TICK_MS } from "../objects/constants";
 import type { DeeeepioMapScreenObject } from "../types";
 import { updateAnimalPhysics, updateAnimalRender } from "./animal-update";
 import { updateFood } from "./food-update";
@@ -12,8 +13,6 @@ import { setShadowSize as setShadow } from "./shadow";
 import { initWorld } from "./world-init";
 import * as TWEEN from "@tweenjs/tween.js";
 import * as PIXI from "pixi.js";
-
-const TICK_MS = 33;
 
 export async function initGame() {
 	const s = gameState;
