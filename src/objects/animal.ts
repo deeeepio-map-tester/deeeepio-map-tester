@@ -5,7 +5,7 @@ import animals from "../game-utils/consts/animals.json";
 import { BodyInterpolator } from "../game/interpolator";
 import { makeHumanReadableNumber } from "../math-utils";
 import type { AnimalAbilities } from "../types";
-import { linearDampingFactor, planckDownscaleFactor, speedRatio } from "./constants";
+import { angularDamping, bodyDefaults, linearDampingFactor, planckDownscaleFactor, speedRatio } from "./constants";
 import { Assets, Container, Graphics, Sprite, Text } from "pixi.js";
 import { type Body, Box, Vec2, type World, type Fixture } from "planck";
 
@@ -13,6 +13,17 @@ const abilityMap: Record<string, AnimalAbilities> = {
 	default: { chargedBoost: defaultChargedBoost },
 	killerwhale: { chargedBoost: killerwhaleChargedBoost },
 };
+
+const BOOST_BAR_WIDTH = 16;
+const BOOST_BAR_HEIGHT = 72;
+const BOOST_BAR_INNER_WIDTH = 12;
+const BOOST_BAR_INNER_HEIGHT = 68;
+const BOOST_BAR_COLOR = 0x000000;
+const BOOST_BAR_ALPHA = 0.3;
+const BOOST_BAR_INNER_COLOR = 0x00edff;
+const BOOST_BAR_INNER_ALPHA = 0.7;
+const BOOST_BAR_CHARGED_COLOR = 0x05ff00;
+const boostBarOffset = (sm: number) => ({ x: 50 + 40 * (sm - 1), y: 34 + 40 * (sm - 1) });
 
 function getAbilityModule(name: string): AnimalAbilities {
 	return abilityMap[name] ?? abilityMap.default;
@@ -121,7 +132,7 @@ export class Animal {
 			position: new Vec2(x, y),
 			angle: 0,
 			linearDamping: linearDampingFactor,
-			angularDamping: 0.01,
+			angularDamping: angularDamping,
 			allowSleep: false,
 			awake: true,
 			gravityScale: 0,
@@ -135,7 +146,7 @@ export class Animal {
 				this.animalSize.planck.width / planckDownscaleFactor,
 				this.animalSize.planck.height / planckDownscaleFactor,
 			),
-			{ density: 0.1, friction: 0.7, restitution: 0 },
+			{ ...bodyDefaults },
 		);
 		this.animal.setMassData({ mass: 1, center: new Vec2(0, 0), I: 0 });
 		this.animal.setUserData({ increaseXp: this.increaseXp.bind(this) });
@@ -182,15 +193,17 @@ export class Animal {
 		// Add boost bar
 		if (this.animalData.hasSecondaryAbility) {
 			this.chargedBoostBar = new Graphics();
-			this.chargedBoostBar.rect(0, 0, 16, 72).fill({ color: 0x000000, alpha: 0.3 });
+			this.chargedBoostBar
+				.rect(0, 0, BOOST_BAR_WIDTH, BOOST_BAR_HEIGHT)
+				.fill({ color: BOOST_BAR_COLOR, alpha: BOOST_BAR_ALPHA });
 
-			this.chargedBoostBar.position.set(
-				50 + 40 * (this.animalData.sizeMultiplier - 1),
-				34 + 40 * (this.animalData.sizeMultiplier - 1),
-			);
+			const barOffset = boostBarOffset(this.animalData.sizeMultiplier);
+			this.chargedBoostBar.position.set(barOffset.x, barOffset.y);
 
 			this.chargedBoostBarInner = new Graphics();
-			this.chargedBoostBarInner.rect(2, 2, 12, 68).fill({ color: 0x00edff, alpha: 0.7 });
+			this.chargedBoostBarInner
+				.rect(2, 2, BOOST_BAR_INNER_WIDTH, BOOST_BAR_INNER_HEIGHT)
+				.fill({ color: BOOST_BAR_INNER_COLOR, alpha: BOOST_BAR_INNER_ALPHA });
 
 			this.chargedBoostBar.alpha = 0;
 
@@ -242,7 +255,7 @@ export class Animal {
 				(this.animalSize.planck.width / planckDownscaleFactor) * this.scale,
 				(this.animalSize.planck.height / planckDownscaleFactor) * this.scale,
 			),
-			{ density: 0.1, friction: 0.7, restitution: 0 },
+			{ ...bodyDefaults },
 		);
 	}
 
@@ -254,17 +267,17 @@ export class Animal {
 				this.chargedBoostBar.alpha = 0;
 			} else if (this.chargedBoostBarInner) {
 				this.chargedBoostBar.alpha = 1;
-				const targetColor = percent === 1 ? 0x05ff00 : 0x00edff;
+				const targetColor = percent === 1 ? BOOST_BAR_CHARGED_COLOR : BOOST_BAR_INNER_COLOR;
 				if (this.chargedBoostBarInner.fillStyle.color !== targetColor) {
 					this.chargedBoostBarInner.clear();
-					this.chargedBoostBarInner.rect(2, 2, 12, 68).fill({ color: targetColor, alpha: 0.7 });
+					this.chargedBoostBarInner
+						.rect(2, 2, BOOST_BAR_INNER_WIDTH, BOOST_BAR_INNER_HEIGHT)
+						.fill({ color: targetColor, alpha: BOOST_BAR_INNER_ALPHA });
 				}
 				this.chargedBoostBarInner.scale.set(1, percent);
-				this.chargedBoostBarInner.position.set(0, 68 * (1 - percent));
-				this.chargedBoostBar.position.set(
-					50 + 40 * (this.animalData.sizeMultiplier - 1),
-					34 + 40 * (this.animalData.sizeMultiplier - 1),
-				);
+				this.chargedBoostBarInner.position.set(0, BOOST_BAR_INNER_HEIGHT * (1 - percent));
+				const barOffset = boostBarOffset(this.animalData.sizeMultiplier);
+				this.chargedBoostBar.position.set(barOffset.x, barOffset.y);
 			}
 			this.chargedBoostPercent = percent;
 		}

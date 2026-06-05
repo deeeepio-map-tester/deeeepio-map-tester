@@ -94,6 +94,7 @@ export function renderMap(map: MapData, layers: LayerRefs) {
 		if (hidespace.hSType === 21) {
 			object.animation = "whirlpool";
 			object.alpha /= 2;
+			s.whirlPoolObjects.push(object);
 		}
 
 		if (hs.above && (hidespace.opacity === 1 || hidespace.opacity === undefined)) {

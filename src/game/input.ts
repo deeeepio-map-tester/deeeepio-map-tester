@@ -8,10 +8,13 @@ import * as planck from "planck";
 
 export function initMouseTracking() {
 	const s = gameState;
-	document.addEventListener("mousemove", (event) => {
-		s.mouseData.clientX = event.clientX;
-		s.mouseData.clientY = event.clientY;
-	});
+	document.addEventListener(
+		"mousemove",
+		throttle((event: MouseEvent) => {
+			s.mouseData.clientX = event.clientX;
+			s.mouseData.clientY = event.clientY;
+		}, 16),
+	);
 }
 
 export const setupBoost = (animal: Animal) => {
@@ -35,8 +38,6 @@ export const setupBoost = (animal: Animal) => {
 			const power = animalInstance.inWater ? boostPower.water : boostPower.air;
 			const accelStrength = animalInstance.speedFac * power * 50.0;
 			const accelDuration = 50;
-			const boostDuration = 150;
-			const recoverDuration = boostDuration * 2;
 
 			animalInstance.boostForce = {
 				x: Math.cos(angle) * accelStrength,
@@ -111,19 +112,13 @@ export const setupBoost = (animal: Animal) => {
 			let landhop = false;
 
 			if (!myAnimal.inWater) {
-				const contact = [];
-				for (let ce = myAnimal.animal.getContactList(); ce; ce = ce.next) {
-					contact.push(ce);
-				}
 				try {
-					if (
-						contact.filter(
-							(c: planck.ContactEdge) =>
-								((c.other as planck.Body).getUserData() as { type?: string })?.type === "terrainTop",
-						).length > 0
-					) {
-						landhop = true;
+					let hasTerrainTop = false;
+					for (let ce = myAnimal.animal.getContactList(); ce && !hasTerrainTop; ce = ce.next) {
+						const ud = (ce.other as planck.Body).getUserData() as { type?: string } | undefined;
+						if (ud?.type === "terrainTop") hasTerrainTop = true;
 					}
+					if (hasTerrainTop) landhop = true;
 				} catch (e) {
 					console.error(e);
 				}
@@ -147,8 +142,10 @@ export const setupBoost = (animal: Animal) => {
 export function initZoomControls() {
 	const s = gameState;
 	const app = s.app!;
+	let zoomRafId: number | null = null;
 
 	app.canvas.addEventListener("wheel", (event: unknown) => {
+		if (zoomRafId !== null) cancelAnimationFrame(zoomRafId);
 		let newZoom = Math.sign((event as { wheelDelta: number }).wheelDelta) === 1 ? s.zoom * 1.2 : s.zoom / 1.2;
 		newZoom = clamp(newZoom, 4, 16);
 		const originalZoom = { z: s.zoom };
@@ -161,8 +158,8 @@ export function initZoomControls() {
 			.start();
 		function animate(time: number) {
 			zoomTween.update(time);
-			requestAnimationFrame(animate);
+			zoomRafId = requestAnimationFrame(animate);
 		}
-		requestAnimationFrame(animate);
+		zoomRafId = requestAnimationFrame(animate);
 	});
 }

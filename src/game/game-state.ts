@@ -50,6 +50,7 @@ export interface GameState {
 	waterBBoxes: { minX: number; minY: number; maxX: number; maxY: number }[];
 	shadowSettings: { alpha: number; size: number };
 	whirlPool: { rotation: number };
+	whirlPoolObjects: (PIXI.Container & { animation?: string })[];
 	habitats: (DeeeepioMapScreenObject & { points: [number, number][] })[];
 }
 
@@ -70,5 +71,6 @@ export const gameState: GameState = {
 	waterBBoxes: [],
 	shadowSettings: { alpha: 0, size: 0 },
 	whirlPool: { rotation: 0 },
+	whirlPoolObjects: [],
 	habitats: [],
 };

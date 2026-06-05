@@ -111,7 +111,7 @@ export async function initGame() {
 	}
 
 	function physicsStep(dt: number) {
-		s.myAnimals.forEach((animal, index) => {
+		s.myAnimals.forEach((animal) => {
 			updateAnimalPhysics(animal, true);
 		});
 
@@ -144,13 +144,7 @@ export async function initGame() {
 		app.stage.position.set(app.screen.width / 2, app.screen.height / 2);
 		app.stage.scale.set(s.zoom);
 
-		const layers = s.layers!;
-		layers.hideSpacesLowLayer.children.forEach((object: PIXI.ContainerChild & { animation?: string }) => {
-			if (object.animation !== "whirlpool") return;
-			object.angle = whirlPool.rotation;
-		});
-		layers.hideSpacesLowerLayer.children.forEach((object: PIXI.ContainerChild & { animation?: string }) => {
-			if (object.animation !== "whirlpool") return;
+		s.whirlPoolObjects.forEach((object) => {
 			object.angle = whirlPool.rotation;
 		});
 

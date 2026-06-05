@@ -12,7 +12,6 @@ import pointInPolygon from "robust-point-in-polygon";
 
 export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 	const s = gameState;
-	const layers = s.layers!;
 	const app = s.app!;
 	const thisAnimal = animal.getState;
 	thisAnimal.inWater =
@@ -56,43 +55,32 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 	let nearestPointOnTerrain: planck.Vec2 | null = null;
 	const halfHeight = (0.5 * thisAnimal.animalSize.planck.height) / planckDownscaleFactor;
 
+	const animalPos = thisAnimal.animal.getPosition();
+
 	if (thisAnimal.animalData.canStand) {
-		let terrainContacts: planck.Body[] = [];
 		let distToGround = Number.POSITIVE_INFINITY;
-
-		for (let ce = thisAnimal.animal.getContactList(); ce; ce = ce.next) {
-			if (ce.other) terrainContacts.push(ce.other);
-		}
-
-		terrainContacts = terrainContacts
-			.filter((d: planck.Body) => {
-				const t = (d.getUserData() as { type?: string })?.type;
-				return t === "terrain" || t === "terrainTop" || t === "terrainBottom";
-			})
-			.filter((d: planck.Body) => {
-				const v = (d.getUserData() as { vertices?: { x: number; y: number }[] })?.vertices;
-				const p = thisAnimal.animal.getPosition();
-				if (!v || !p) return false;
-				const nearest = findNearestPointOnLine(p.x, p.y + halfHeight, v[0].x, v[0].y, v[1].x, v[1].y);
-				return nearest.y - (p.y + halfHeight) > 0 && Math.abs((v[0].y - v[1].y) / (v[0].x - v[1].x)) < 3;
-			});
-
 		const walkRange = ((thisAnimal.walking ? 1 : 0.7) / planckDownscaleFactor) * thisAnimal.animalSize.planck.height;
 
-		const edgeInfos = terrainContacts
-			.map((body: planck.Body) => {
-				const v = (body.getUserData() as { vertices?: { x: number; y: number }[] })?.vertices;
-				const p = thisAnimal.animal.getPosition();
-				if (!v || !p) return null;
-				const n = findNearestPointOnLine(p.x, p.y + halfHeight, v[0].x, v[0].y, v[1].x, v[1].y);
-				const dist = Math.sqrt((n.x - p.x) ** 2 + (n.y - (p.y + halfHeight)) ** 2);
-				if (dist > walkRange) return null;
-				const rise = v[0].y - v[1].y;
-				const run = v[0].x - v[1].x;
-				const edgeAngle = Math.atan2(rise, run);
-				return { dist, nx: -Math.sin(edgeAngle), ny: Math.cos(edgeAngle), px: n.x, py: n.y };
-			})
-			.filter((e): e is NonNullable<typeof e> => e !== null);
+		const edgeInfos: { dist: number; nx: number; ny: number; px: number; py: number }[] = [];
+		for (let ce = thisAnimal.animal.getContactList(); ce; ce = ce.next) {
+			const body = ce.other;
+			if (!body) continue;
+			const ud = body.getUserData() as { type?: string; vertices?: { x: number; y: number }[] } | undefined;
+			const type = ud?.type;
+			if (type !== "terrain" && type !== "terrainTop" && type !== "terrainBottom") continue;
+			const v = ud?.vertices;
+			if (!v) continue;
+			const nearest = findNearestPointOnLine(animalPos.x, animalPos.y + halfHeight, v[0].x, v[0].y, v[1].x, v[1].y);
+			if (nearest.y - (animalPos.y + halfHeight) <= 0) continue;
+			const slope = v[0].x === v[1].x ? Number.POSITIVE_INFINITY : Math.abs((v[0].y - v[1].y) / (v[0].x - v[1].x));
+			if (slope >= 3) continue;
+			const dist = Math.sqrt((nearest.x - animalPos.x) ** 2 + (nearest.y - (animalPos.y + halfHeight)) ** 2);
+			if (dist > walkRange) continue;
+			const rise = v[0].y - v[1].y;
+			const run = v[0].x - v[1].x;
+			const edgeAngle = Math.atan2(rise, run);
+			edgeInfos.push({ dist, nx: -Math.sin(edgeAngle), ny: Math.cos(edgeAngle), px: nearest.x, py: nearest.y });
+		}
 
 		if (edgeInfos.length > 0 && (thisAnimal.animalData.canWalkUnderwater || !thisAnimal.inWater)) {
 			distToGround = Math.min(...edgeInfos.map((e) => e.dist));
@@ -172,8 +160,8 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 		thisAnimal.animal.setAngle(normalAngle + Math.PI / 2);
 
 		if (nearestPointOnTerrain) {
-			const bottomY = thisAnimal.animal.getPosition().y + halfHeight;
-			const dx = nearestPointOnTerrain.x - thisAnimal.animal.getPosition().x;
+			const bottomY = animalPos.y + halfHeight;
+			const dx = nearestPointOnTerrain.x - animalPos.x;
 			const dy = nearestPointOnTerrain.y - bottomY;
 			const suctionForce = 20 * thisAnimal.animal.getMass();
 			const dist = Math.sqrt(dx * dx + dy * dy);
@@ -238,7 +226,8 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 		thisAnimal.pixiAnimal.rotation = interpolated.angle;
 		const camX = app.stage.pivot.x;
 		const camY = app.stage.pivot.y;
-		const viewDist = Math.max(app.screen.width, app.screen.height) * s.zoom * 12;
+		const maxScreenDim = Math.max(app.screen.width, app.screen.height);
+		const viewDist = maxScreenDim * s.zoom * 12;
 		const visible = (thisAnimal.pixiAnimal.x - camX) ** 2 + (thisAnimal.pixiAnimal.y - camY) ** 2 < viewDist * viewDist;
 		thisAnimal.pixiAnimal.renderable = visible;
 		thisAnimal.pixiAnimalUi.renderable = visible;
@@ -257,6 +246,9 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 		thisAnimal.pixiAnimal.rotation = thisAnimal.direction;
 
 		if (isMain) {
+			const maxScreenDim = Math.max(app.screen.width, app.screen.height);
+			const hideDist = maxScreenDim * s.zoom * 20;
+
 			const viewportPos = clampCamera(
 				thisAnimal.pixiAnimal.x,
 				thisAnimal.pixiAnimal.y,
@@ -283,30 +275,21 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 			});
 
 			layers.hideSpacesHighLayer.children.forEach((h) => {
-				if (
-					(thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 <
-					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
-				) {
+				if ((thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 < hideDist) {
 					h.renderable = true;
 				} else {
 					h.renderable = false;
 				}
 			});
 			layers.hideSpacesLowLayer.children.forEach((h) => {
-				if (
-					(thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 <
-					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
-				) {
+				if ((thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 < hideDist) {
 					h.renderable = true;
 				} else {
 					h.renderable = false;
 				}
 			});
 			layers.foodLayer.children.forEach((f) => {
-				if (
-					(thisAnimal.pixiAnimal.x - f.x) ** 2 + (thisAnimal.pixiAnimal.y - f.y) ** 2 <
-					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
-				) {
+				if ((thisAnimal.pixiAnimal.x - f.x) ** 2 + (thisAnimal.pixiAnimal.y - f.y) ** 2 < hideDist) {
 					const underOpaqueCeiling = layers.ceilingsLayer.children.some(
 						(c: PIXI.ContainerChild & { points?: [number, number][]; alpha?: number }) => {
 							return c.points && c.alpha === 1 && [-1, 0].includes(pointInPolygon(c.points, [f.x, f.y]));

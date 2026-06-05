@@ -1,7 +1,14 @@
 import { isClockwise, makeBrighter } from "./game-utils/maploader";
 import * as PIXI from "pixi.js";
 
+const gradientCache = new Map<string, PIXI.Texture>();
+const radialGradientCache = new Map<string, PIXI.Texture>();
+
 export function createGradient(startColor: number, endColor: number, quality = 256): PIXI.Texture {
+	const key = `${startColor}-${endColor}-${quality}`;
+	let texture = gradientCache.get(key);
+	if (texture) return texture;
+
 	const canvas: HTMLCanvasElement = document.createElement("canvas");
 
 	canvas.width = 1;
@@ -14,7 +21,6 @@ export function createGradient(startColor: number, endColor: number, quality = 2
 
 	if (!ctx) return PIXI.Texture.EMPTY;
 
-	// use canvas2d API to create gradient
 	const grd: CanvasGradient = ctx.createLinearGradient(0, 0, 0, quality);
 
 	grd.addColorStop(0, hexStartColor);
@@ -23,10 +29,16 @@ export function createGradient(startColor: number, endColor: number, quality = 2
 	ctx.fillStyle = grd;
 	ctx.fillRect(0, 0, 1, quality);
 
-	return PIXI.Texture.from(canvas);
+	texture = PIXI.Texture.from(canvas);
+	gradientCache.set(key, texture);
+	return texture;
 }
 
 export function createRadialGradient(radius: number, stops: { color: string; offset: number }[]): PIXI.Texture {
+	const key = `${radius}-${stops.map((s) => `${s.offset}:${s.color}`).join(",")}`;
+	let texture = radialGradientCache.get(key);
+	if (texture) return texture;
+
 	const canvas: HTMLCanvasElement = document.createElement("canvas");
 
 	canvas.width = radius;
@@ -36,7 +48,6 @@ export function createRadialGradient(radius: number, stops: { color: string; off
 
 	if (!ctx) return PIXI.Texture.EMPTY;
 
-	// use canvas2d API to create gradient
 	const hr = radius / 2;
 	const grd: CanvasGradient = ctx.createRadialGradient(hr, hr, 0, hr, hr, hr);
 
@@ -47,7 +58,9 @@ export function createRadialGradient(radius: number, stops: { color: string; off
 	ctx.fillStyle = grd;
 	ctx.fillRect(0, 0, radius, radius);
 
-	return PIXI.Texture.from(canvas);
+	texture = PIXI.Texture.from(canvas);
+	radialGradientCache.set(key, texture);
+	return texture;
 }
 
 export function renderGradientShape(
