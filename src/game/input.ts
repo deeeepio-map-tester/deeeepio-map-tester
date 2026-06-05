@@ -20,11 +20,14 @@ export const setupBoost = (animal: Animal) => {
 
 	const throttledBoost = throttle(
 		(event: { clientX: number; clientY: number }, animalInstance: Animal) => {
+			const dpr = window.devicePixelRatio;
+			const canvasMouseX = event.clientX * dpr;
+			const canvasMouseY = event.clientY * dpr;
 			const centerX = (animalInstance.pixiAnimal.x - app.stage.pivot.x) * s.zoom;
 			const centerY = (animalInstance.pixiAnimal.y - app.stage.pivot.y) * s.zoom;
 			const angle = point2rad(
-				event.clientX - window.innerWidth / 2,
-				event.clientY - window.innerHeight / 2,
+				canvasMouseX - app.screen.width / 2,
+				canvasMouseY - app.screen.height / 2,
 				centerX,
 				centerY,
 			);
@@ -72,11 +75,14 @@ export const setupBoost = (animal: Animal) => {
 	);
 	const throttledLandhop = throttle(
 		(event: { clientX: number; clientY: number }, animalInstance: Animal) => {
+			const dpr = window.devicePixelRatio;
+			const canvasMouseX = event.clientX * dpr;
+			const canvasMouseY = event.clientY * dpr;
 			const centerX = (animalInstance.pixiAnimal.x - app.stage.pivot.x) * s.zoom;
 			const centerY = (animalInstance.pixiAnimal.y - app.stage.pivot.y) * s.zoom;
 			const angle = point2rad(
-				event.clientX - window.innerWidth / 2,
-				event.clientY - window.innerHeight / 2,
+				canvasMouseX - app.screen.width / 2,
+				canvasMouseY - app.screen.height / 2,
 				centerX,
 				centerY,
 			);

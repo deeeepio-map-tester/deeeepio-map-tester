@@ -38,11 +38,13 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 		);
 	thisAnimal.prevInWater = thisAnimal.inWater;
 
+	const dpr = window.devicePixelRatio;
+	const canvasMouseX = s.mouseData.clientX * dpr;
+	const canvasMouseY = s.mouseData.clientY * dpr;
 	thisAnimal.doApplyForce = isMine
 		? Math.sqrt(
-				((thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom - (s.mouseData.clientX - window.innerWidth / 2)) ** 2 +
-					((thisAnimal.pixiAnimal.y - app.stage.pivot.y) * s.zoom - (s.mouseData.clientY - window.innerHeight / 2)) **
-						2,
+				((thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom - (canvasMouseX - app.screen.width / 2)) ** 2 +
+					((thisAnimal.pixiAnimal.y - app.stage.pivot.y) * s.zoom - (canvasMouseY - app.screen.height / 2)) ** 2,
 			) >
 			6 * s.zoom
 		: false;
@@ -241,7 +243,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 		thisAnimal.pixiAnimal.rotation = interpolated.angle;
 		const camX = app.stage.pivot.x;
 		const camY = app.stage.pivot.y;
-		const viewDist = Math.max(window.innerWidth, window.innerHeight) * s.zoom * 12;
+		const viewDist = Math.max(app.screen.width, app.screen.height) * s.zoom * 12;
 		const visible = (thisAnimal.pixiAnimal.x - camX) ** 2 + (thisAnimal.pixiAnimal.y - camY) ** 2 < viewDist * viewDist;
 		thisAnimal.pixiAnimal.renderable = visible;
 		thisAnimal.pixiAnimalUi.renderable = visible;
@@ -249,15 +251,13 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 	}
 
 	if (isMine) {
+		const dpr = window.devicePixelRatio;
+		const canvasMouseX = s.mouseData.clientX * dpr;
+		const canvasMouseY = s.mouseData.clientY * dpr;
 		const centerX = (thisAnimal.pixiAnimal.x - app.stage.pivot.x) * s.zoom;
 		const centerY = (thisAnimal.pixiAnimal.y - app.stage.pivot.y) * s.zoom;
 		thisAnimal.direction =
-			point2rad(
-				s.mouseData.clientX - window.innerWidth / 2,
-				s.mouseData.clientY - window.innerHeight / 2,
-				centerX,
-				centerY,
-			) +
+			point2rad(canvasMouseX - app.screen.width / 2, canvasMouseY - app.screen.height / 2, centerX, centerY) +
 			Math.PI / 2;
 		thisAnimal.pixiAnimal.rotation = thisAnimal.direction;
 
@@ -268,8 +268,8 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 				s.zoom,
 				Number(s.map!.worldSize.width) * 10,
 				Number(s.map!.worldSize.height) * 10,
-				window.innerWidth,
-				window.innerHeight,
+				app.screen.width,
+				app.screen.height,
 			);
 			app.stage.pivot.set(...viewportPos);
 			layers.shadowLayer.pivot.set(-thisAnimal.pixiAnimal.x, -thisAnimal.pixiAnimal.y);
@@ -290,7 +290,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 			layers.hideSpacesHighLayer.children.forEach((h) => {
 				if (
 					(thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 <
-					Math.max(window.innerHeight, window.innerWidth) * s.zoom * 20
+					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
 				) {
 					h.renderable = true;
 				} else {
@@ -300,7 +300,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 			layers.hideSpacesLowLayer.children.forEach((h) => {
 				if (
 					(thisAnimal.pixiAnimal.x - h.x) ** 2 + (thisAnimal.pixiAnimal.y - h.y) ** 2 <
-					Math.max(window.innerHeight, window.innerWidth) * s.zoom * 20
+					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
 				) {
 					h.renderable = true;
 				} else {
@@ -310,7 +310,7 @@ export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: bool
 			layers.foodLayer.children.forEach((f) => {
 				if (
 					(thisAnimal.pixiAnimal.x - f.x) ** 2 + (thisAnimal.pixiAnimal.y - f.y) ** 2 <
-					Math.max(window.innerHeight, window.innerWidth) * s.zoom * 20
+					Math.max(app.screen.height, app.screen.width) * s.zoom * 20
 				) {
 					const underOpaqueCeiling = layers.ceilingsLayer.children.some(
 						(c: PIXI.ContainerChild & { points?: [number, number][]; alpha?: number }) => {

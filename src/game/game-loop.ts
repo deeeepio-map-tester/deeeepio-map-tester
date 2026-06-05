@@ -141,7 +141,7 @@ export async function initGame() {
 	}
 
 	function renderStep(t: number) {
-		app.stage.position.set(window.innerWidth / 2, window.innerHeight / 2);
+		app.stage.position.set(app.screen.width / 2, app.screen.height / 2);
 		app.stage.scale.set(s.zoom);
 
 		const layers = s.layers!;
