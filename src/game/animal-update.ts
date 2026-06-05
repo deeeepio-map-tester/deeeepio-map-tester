@@ -65,7 +65,10 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 		}
 
 		terrainContacts = terrainContacts
-			.filter((d: planck.Body) => (d.getUserData() as { type?: string })?.type === "terrain")
+			.filter((d: planck.Body) => {
+				const t = (d.getUserData() as { type?: string })?.type;
+				return t === "terrain" || t === "terrainTop" || t === "terrainBottom";
+			})
 			.filter((d: planck.Body) => {
 				const v = (d.getUserData() as { vertices?: { x: number; y: number }[] })?.vertices;
 				const p = thisAnimal.animal.getPosition();

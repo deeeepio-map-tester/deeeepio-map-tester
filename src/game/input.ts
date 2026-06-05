@@ -44,22 +44,6 @@ export const setupBoost = (animal: Animal) => {
 				remaining: accelDuration,
 				duration: accelDuration,
 			};
-
-			const savedSpeedFac = animalInstance.speedFac;
-			animalInstance.speedFac = savedSpeedFac * 0.15;
-			const sf = { v: savedSpeedFac * 0.15 };
-			const boostTween = new TWEEN.Tween(sf)
-				.to({ v: savedSpeedFac }, recoverDuration)
-				.easing(TWEEN.Easing.Quartic.In)
-				.onUpdate(() => {
-					animalInstance.speedFac = sf.v;
-				})
-				.start();
-			function boost(time: number) {
-				boostTween.update(time);
-				requestAnimationFrame(boost);
-			}
-			requestAnimationFrame(boost);
 			return true;
 		},
 		850,
@@ -79,10 +63,8 @@ export const setupBoost = (animal: Animal) => {
 				centerY,
 			);
 
-			const impulseStrength = animalInstance.speedFac * boostPower.land * 15.0;
+			const impulseStrength = animalInstance.speedFac * boostPower.land * 10.0;
 			const accelDuration = 60;
-			const boostDuration = 150;
-			const recoverDuration = boostDuration * 2;
 
 			animalInstance.boostForce = {
 				x: Math.cos(angle) * impulseStrength,
@@ -90,17 +72,6 @@ export const setupBoost = (animal: Animal) => {
 				remaining: accelDuration,
 				duration: accelDuration,
 			};
-
-			const savedSpeedFac = animalInstance.speedFac;
-			animalInstance.speedFac = savedSpeedFac * 0.15;
-			const sf = { v: savedSpeedFac * 0.15 };
-			const boostTween = new TWEEN.Tween(sf)
-				.to({ v: savedSpeedFac }, recoverDuration)
-				.easing(TWEEN.Easing.Quartic.In)
-				.onUpdate(() => {
-					animalInstance.speedFac = sf.v;
-				})
-				.start();
 		},
 		150,
 		{ trailing: false },
