@@ -33,10 +33,9 @@ export const setupBoost = (animal: Animal) => {
 			);
 
 			const power = animalInstance.inWater ? boostPower.water : boostPower.air;
-			const accelStrength = animalInstance.speedFac * power * 15.0;
-			const accelDuration = 100;
-			const forceStrength = animalInstance.speedFac * power * 0.8;
-			const boostDuration = 300;
+			const accelStrength = animalInstance.speedFac * power * 50.0;
+			const accelDuration = 50;
+			const boostDuration = 150;
 			const recoverDuration = boostDuration * 2;
 
 			animalInstance.boostForce = {
@@ -44,13 +43,6 @@ export const setupBoost = (animal: Animal) => {
 				y: Math.sin(angle) * accelStrength,
 				remaining: accelDuration,
 				duration: accelDuration,
-			};
-
-			animalInstance.sustainedForce = {
-				x: Math.cos(angle) * forceStrength,
-				y: Math.sin(angle) * forceStrength,
-				remaining: boostDuration,
-				duration: boostDuration,
 			};
 
 			const savedSpeedFac = animalInstance.speedFac;
@@ -89,7 +81,6 @@ export const setupBoost = (animal: Animal) => {
 
 			const impulseStrength = animalInstance.speedFac * boostPower.land * 15.0;
 			const accelDuration = 60;
-			const forceStrength = animalInstance.speedFac * boostPower.land * 0.8;
 			const boostDuration = 150;
 			const recoverDuration = boostDuration * 2;
 
@@ -98,13 +89,6 @@ export const setupBoost = (animal: Animal) => {
 				y: Math.sin(angle) * impulseStrength,
 				remaining: accelDuration,
 				duration: accelDuration,
-			};
-
-			animalInstance.sustainedForce = {
-				x: Math.cos(angle) * forceStrength,
-				y: Math.sin(angle) * forceStrength,
-				remaining: boostDuration,
-				duration: boostDuration,
 			};
 
 			const savedSpeedFac = animalInstance.speedFac;

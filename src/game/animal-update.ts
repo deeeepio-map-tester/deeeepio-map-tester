@@ -202,14 +202,6 @@ export function updateAnimalPhysics(animal: Animal, isMine: boolean) {
 		);
 		thisAnimal.boostForce.remaining -= TICK_MS;
 	}
-
-	if (thisAnimal.sustainedForce.remaining > 0) {
-		const fraction = thisAnimal.sustainedForce.remaining / thisAnimal.sustainedForce.duration;
-		thisAnimal.animal.applyForceToCenter(
-			new planck.Vec2(thisAnimal.sustainedForce.x * fraction, thisAnimal.sustainedForce.y * fraction),
-		);
-		thisAnimal.sustainedForce.remaining *= 0.7;
-	}
 }
 
 export function updateAnimalRender(animal: Animal, isMine: boolean, isMain: boolean, t: number) {
